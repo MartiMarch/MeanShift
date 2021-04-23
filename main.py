@@ -10,10 +10,14 @@ camara = cv2.VideoCapture(2)
 # Se lee una imagen para saber las dimensiones de las imágenes
 _, imagen = camara.read()
 
+# Limita el tamaño de la ventanan en función del tamaño total de la ventana
+w = int(camara.get(cv2.CAP_PROP_FRAME_WIDTH)*0.1)
+h = int(camara.get(cv2.CAP_PROP_FRAME_HEIGHT)*0.1)
+
 # Primera área sobre la que se va a aplicar Meanshift
 wCamara = int(camara.get(cv2.CAP_PROP_FRAME_WIDTH)/2)
 hCamara = int(camara.get(cv2.CAP_PROP_FRAME_HEIGHT)/2)
-x, y, w, h = wCamara, hCamara, 100, 100
+x, y, w, h = wCamara, hCamara, w, h
 ventana = (x, y, w, h)
 
 # Se crea un área de interés
