@@ -1,9 +1,9 @@
-import cv2
-import math
-
 """
     Utilizando el algoritmo Meanshift para detectar movimiento.
 """
+import cv2
+import math
+
 # Se accede a la camara
 camara = cv2.VideoCapture(2)
 
@@ -11,8 +11,8 @@ camara = cv2.VideoCapture(2)
 _, imagen = camara.read()
 
 # Limita el tamaño de la ventanan en función del tamaño total de la ventana
-w = int(camara.get(cv2.CAP_PROP_FRAME_WIDTH)*0.1)
-h = int(camara.get(cv2.CAP_PROP_FRAME_HEIGHT)*0.1)
+w = int(camara.get(cv2.CAP_PROP_FRAME_WIDTH) * 0.5)
+h = int(camara.get(cv2.CAP_PROP_FRAME_HEIGHT) * 0.5)
 
 # Primera área sobre la que se va a aplicar Meanshift
 wCamara = int(camara.get(cv2.CAP_PROP_FRAME_WIDTH)/2)
@@ -23,6 +23,10 @@ ventana = (x, y, w, h)
 # Se crea un área de interés
 areaInteres = imagen[y:y + h, x:x + w]
 
+# Puntos sobre los que calcular la distancia
+x0 = -1
+y0 = -1
+
 # Pasamos la imágen de RGB a HSV
 hsv = cv2.cvtColor(areaInteres, cv2.COLOR_BGR2HSV)
 
@@ -32,10 +36,6 @@ histograma = cv2.calcHist([hsv], [0], None, [180], [0, 180])
 # Se normalizan los valores
 histograma = cv2.normalize(histograma, histograma, 0, 255, cv2.NORM_MINMAX)
 
-# Punto sobre el que calcular la distancia
-x0 = -1
-y0 = -1
-
 # Umbral que determina si existe movimiento
 umbral = 0.04 * math.sqrt(camara.get(cv2.CAP_PROP_FRAME_HEIGHT) ** 2 + camara.get(cv2.CAP_PROP_FRAME_WIDTH) ** 2)
 
@@ -43,11 +43,8 @@ umbral = 0.04 * math.sqrt(camara.get(cv2.CAP_PROP_FRAME_HEIGHT) ** 2 + camara.ge
     Para que MeanShift termine se pude fijar un número de iteraciones máximas o
     marcar una condición de convergencia. En opencv se pueden utilizar los dos
     criterios a la vez o tan solo uno.
-
     * El primer parámetro es que método se va a utilizar.
-
     * Cantidad de iteraciones máximas
-
     * Cantidad de píxeles a los que se desplaza. Si es menor se detiene.
 """
 terminar = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 15, 1)
@@ -63,18 +60,19 @@ while True:
     mascara = cv2.calcBackProject([imagenHSV], [0], histograma, [0, 180], 1)
 
     # Se aplica Meanshift
-    _, ventana = cv2.meanShift(mascara, ventana, terminar)
+    _, ventanaNormal = cv2.meanShift(mascara, ventana, terminar)
 
     # Obtenemos la información de la ventana
-    x, y, w, h = ventana
+    x, y, w, h = ventanaNormal
 
-    # calculamos la distancia entre el punto anterior y el actual
+    # calculamos la distancia entre el punto anterior y el actual en la ventana "normal"
     if x0 == -1 or y0 == -1:
         x0 = x
         y0 = y
+
     else:
         # Se calcula la distancia entre dos puntos
-        distancia = math.sqrt( (x0 - x) ** 2 + (y0 - y) **2)
+        distancia = math.sqrt((x0 - x) ** 2 + (y0 - y) ** 2)
 
         # Se renuevan los valores de los puntos
         x0 = x
@@ -85,7 +83,6 @@ while True:
             print("movimiento")
 
     # Se dibuja la ventana en el frame
-    x, y, w, h = ventana
     imagenSalida = cv2.rectangle(imagen, (x, y), (x + w, y + h), 255, 2)
 
     # Se muestra la imagen con la máscara aplicada sobre el histograma
